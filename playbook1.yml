@@ -1,0 +1,52 @@
+---
+- name: Config node for test.
+  hosts: node
+  become: true
+  vars_files:
+    - pass.txt
+  tasks:
+    - name: Create account and do config.
+      user:
+        name: "johnny"
+        comment: "Johnny Megatron"
+        shell: "/usr/bin/fish"
+#        password: '{{ userpwd }}'
+        state: present
+    - name: Add user to sudoers
+      ansible.builtin.copy:
+         content: "/etc/sudoers"
+         dest: /etc/sudoers
+
+    - name: MOTD with URI.
+      uri:
+        url: https://xkcd.com/info.0.json
+      register: motduri
+
+    - name: Line toevoegen in MOTD.
+      ansible.builtin.copy:
+        content: "{{ motduri['json']['alt'] }}"
+        dest: /etc/motd
+
+
+    - name: Install build-essential.
+      ansible.builtin.apt:
+         name: build-essential
+         state: present
+
+    - name: Remove old minesweeperfolder.
+      ansible.builtin.file:
+         path: "MineSweeper/"
+         state: absent
+
+
+    - name: Install git.
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Git clone minesweeper.
+      ansible.builtin.command: "git clone --no-hardlinks https://github.com/unknownblueguy6/MineSweeper.git"
+    - name: Register output of first share.
+      ansible.builtin.shell:  "make"
+      args:
+        chdir: MineSweeper
